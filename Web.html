@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Tương Tác</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5; --primary-hover: #4338ca; --green-color: #16a34a;
+            --green-hover: #15803d; --blue-color: #2563eb; --blue-hover: #1d4ed8;
+            --red-color: #dc2626; --red-hover: #b91c1c; --gray-color: #6b7280;
+            --gray-hover: #4b5563; --text-dark: #1f2937; --text-light: #4b5563;
+            --bg-light: #f3f4f6; --bg-white: #ffffff; --border-color: #d1d5db;
+        }
+        body { font-family: 'Inter', sans-serif; margin: 0; background-color: #000; color: var(--text-dark); }
+        .hidden { display: none !important; }
+        #player-container { position: fixed; inset: 0; z-index: 10; }
+        #player-container iframe { width: 100%; height: 100%; border: none; }
+        #question-modal {
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.75);
+            display: flex; align-items: center; justify-content: center; padding: 1rem;
+            z-index: 50; opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #question-modal.active { opacity: 1; visibility: visible; }
+        #modal-content {
+            background-color: var(--bg-white); border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            width: 100%; max-width: 48rem; padding: 1.5rem;
+            max-height: 90vh; overflow-y: auto; box-sizing: border-box;
+            transform: scale(0.95); opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        @media (min-width: 768px) { #modal-content { padding: 2rem; } }
+        #question-modal.active #modal-content { transform: scale(1); opacity: 1; }
+        #options-container { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-top: 1.5rem; }
+        @media (min-width: 768px) { #options-container { grid-template-columns: 1fr 1fr; gap: 1rem; } }
+        #options-container button {
+            width: 100%; text-align: left; padding: 1rem; border-radius: 0.5rem; font-family: 'Inter', sans-serif;
+            border: 1px solid var(--border-color); cursor: pointer; font-size: 1rem;
+            background-color: var(--bg-white); color: var(--text-dark);
+            transition: background-color 0.2s, border-color 0.2s, border-width 0.2s;
+        }
+        #options-container button:hover:not(:disabled) { background-color: #f9fafb; border-color: var(--primary-color); }
+        #options-container button:disabled { cursor: default; opacity: 0.8; }
+        #feedback-container { margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; text-align: center; }
+        #feedback-container.correct { background-color: #dcfce7; color: #166534; }
+        #feedback-container.incorrect { background-color: #fee2e2; color: #991b1b; }
+        .btn {
+            font-weight: 700; padding: 0.8rem 1.2rem; border-radius: 0.5rem; border: none;
+            color: white; cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+        }
+        #continue-button { float: right; margin-top: 1.5rem; background-color: var(--primary-color); }
+        #continue-button:hover { background-color: var(--primary-hover); }
+        #progress-container {
+            position: fixed; bottom: 40px; left: 0; right: 0; padding: 0.75rem;
+            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #progress-container.visible { opacity: 1; pointer-events: auto; }
+        #progress-wrapper {
+             position: relative; height: 0.375rem; background-color: rgba(255, 255, 255, 0.2);
+             border-radius: 9999px; cursor: pointer;
+        }
+        #progress-bar { position: absolute; top: 0; left: 0; height: 100%; background-color: #ef4444; border-radius: 9999px; width: 0%; }
+        .question-marker { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background-color: white; border-radius: 50%; cursor: pointer; transition: transform 0.2s; z-index: 25; }
+        .question-marker:hover { transform: translate(-50%, -50%) scale(1.5); }
+        .timeline-timestamp { position: absolute; bottom: 15px; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 2px 6px; border-radius: 5px; font-size: 11px; font-weight: 500; white-space: nowrap; pointer-events: none; z-index: 24; opacity: 0; transition: opacity 0.2s; }
+        .question-marker:hover + .timeline-timestamp, .question-marker:focus + .timeline-timestamp { opacity: 1; }
+    </style>
+</head>
+<body>
+    <!-- Container for the YouTube player -->
+    <div id="player-container"><div id="player"></div></div>
+
+    <!-- Custom progress bar with question markers -->
+    <div id="progress-container"><div id="progress-wrapper"><div id="progress-bar"></div></div></div>
+    
+    <!-- Modal for displaying questions -->
+    <div id="question-modal">
+        <div id="modal-content">
+            <h2 id="question-text"></h2>
+            <div id="options-container"></div>
+            <div id="feedback-container" class="hidden">
+                <p id="feedback-text" style="font-weight: 600;"></p>
+                <p id="explanation-text" style="margin-top: 0.5rem; font-size: 0.875rem;"></p>
+            </div>
+            <button id="continue-button" class="btn hidden">Tiếp tục video</button>
+        </div>
+    </div>
+
+    <script>
+        let player;
+        let timeChecker;
+        const currentVideoId = 'rWLRzQQrZA8';
+        const currentQuestions = [
+            { time: 180, question: 'Theo định nghĩa trong bài giảng, đâu là sự khác biệt chính giữa "dữ liệu" và "thông tin"?', options: ["Dữ liệu là kết quả đã xử lý, còn thông tin là các sự kiện thô.", "Dữ liệu là các sự kiện, số liệu thô chưa qua xử lý, còn thông tin là kết quả của việc xử lý dữ liệu theo một cách có ý nghĩa.", "Dữ liệu chỉ bao gồm số, còn thông tin bao gồm cả văn bản và hình ảnh.", "Không có sự khác biệt, chúng là hai thuật ngữ có thể thay thế cho nhau."], correctAnswer: 1, explanation: "Tại [00:02:25], video giải thích rõ ràng rằng dữ liệu là các sự kiện, số liệu hay ký hiệu thô chưa qua xử lý, trong khi thông tin là kết quả của việc xử lý dữ liệu theo một cách có ý nghĩa để giúp chúng ta đưa ra quyết định.", shown: false },
+            { time: 270, question: "Quá trình xử lý dữ liệu của máy tính được mô tả qua bốn giai đoạn cơ bản nào?", options: ["Thu thập, Phân tích, Hiển thị, Lưu trữ.", "Tiếp nhận dữ liệu, Xử lý dữ liệu, Xuất thông tin, Lưu trữ.", "Đầu vào, Xử lý, Đầu ra, Sao lưu.", "Nhập liệu, Tính toán, Trình bày, Ghi nhớ."], correctAnswer: 1, explanation: "Tại [00:03:52], bài giảng nêu rõ bốn giai đoạn cơ bản của chu trình xử lý dữ liệu của máy tính: Tiếp nhận dữ liệu, Xử lý dữ liệu, Xuất thông tin và Lưu trữ.", shown: false },
+            { time: 420, question: 'Thành phần phần cứng nào được ví như "bộ não của máy tính" và có nhiệm vụ thực hiện mọi phép tính cũng như điều khiển hoạt động?', options: ["RAM", "Ổ cứng SSD", "Bo mạch chủ", "Bộ xử lý trung tâm (CPU)"], correctAnswer: 3, explanation: "Tại [00:06:49], video nhấn mạnh rằng Bộ xử lý trung tâm (CPU) là thành phần cốt lõi và quan trọng nhất, được ví như bộ não của máy tính.", shown: false },
+            { time: 540, question: "Đâu là ưu điểm nổi bật của ổ cứng thể rắn (SSD) so với ổ cứng cơ (HDD)?", options: ["Dung lượng lưu trữ lớn hơn nhiều.", "Giá thành rẻ hơn đáng kể.", "Tốc độ đọc/ghi dữ liệu nhanh hơn rất nhiều.", "Sử dụng đĩa từ quay để lưu trữ dữ liệu."], correctAnswer: 2, explanation: "Từ [00:09:07] đến [00:09:22], bài giảng so sánh HDD và SSD, nêu bật ưu điểm của SSD là tốc độ đọc/ghi nhanh hơn rất nhiều do sử dụng chip nhớ và không có bộ phận chuyển động.", shown: false },
+            { time: 780, question: "Đâu không phải là một chức năng chính của hệ điều hành?", options: ["Quản lý tài nguyên phần cứng.", "Quản lý tệp tin và thư mục.", "Tự động cập nhật phần mềm ứng dụng từ các nguồn không xác định.", "Cung cấp giao diện người dùng."], correctAnswer: 2, explanation: "Từ [00:13:50] đến [00:14:22], bài giảng liệt kê bốn chức năng chính của hệ điều hành. Việc tự động cập nhật phần mềm từ các nguồn không xác định không phải là chức năng của hệ điều hành mà là một rủi ro bảo mật.", shown: false }
+        ];
+        let isTimelineSetup = false;
+
+        // Load the YouTube Iframe API asynchronously.
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // This function creates an <iframe> (and YouTube player) after the API code downloads.
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,       // Essential for mobile playback within the page
+                    'rel': 0,               // Do not show related videos
+                    'modestbranding': 1,    // Use minimal YouTube branding
+                    'controls': 1,          // Show player controls
+                    'iv_load_policy': 3,    // Do not show video annotations
+                    'autoplay': 0           // Autoplay is blocked on most mobile browsers
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // The API will call this function when the video player is ready.
+        function onPlayerReady(event) {
+            console.log("YouTube Player is ready.");
+        }
+
+        // The API calls this function when the player's state changes.
+        function onPlayerStateChange(event) {
+            const progressContainer = document.getElementById('progress-container');
+            if (event.data === YT.PlayerState.PLAYING) {
+                if (!isTimelineSetup) {
+                    setTimeout(setupProgressBar, 100); // Build timeline markers
+                    isTimelineSetup = true;
+                }
+                progressContainer.classList.add('visible');
+                startVideoTimer();
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                progressContainer.classList.remove('visible');
+                stopVideoTimer();
+            }
+        }
+        
+        // Starts the interval to check video's current time.
+        function startVideoTimer() {
+            clearInterval(timeChecker); // Ensure no multiple timers are running
+            timeChecker = setInterval(checkVideoTime, 250);
+        }
+
+        // Stops the time-checking interval.
+        function stopVideoTimer() {
+            clearInterval(timeChecker);
+        }
+
+        // Called by the timer to check time and trigger questions.
+        function checkVideoTime() {
+            if (!player || typeof player.getCurrentTime !== 'function') return;
+
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+
+            if (duration > 0) {
+                document.getElementById('progress-bar').style.width = (currentTime / duration) * 100 + '%';
+            }
+
+            const nextQuestion = currentQuestions.find(q => !q.shown);
+            if (nextQuestion && currentTime >= nextQuestion.time) {
+                player.pauseVideo();
+                nextQuestion.shown = true; // Mark as shown to prevent re-triggering
+                showQuestion(nextQuestion);
+            }
+        }
+
+        // Sets up the progress bar with question markers.
+        function setupProgressBar() {
+            const progressWrapper = document.getElementById('progress-wrapper');
+            progressWrapper.innerHTML = '<div id="progress-bar"></div>'; // Clear previous state
+            const duration = player.getDuration();
+
+            if (!duration || duration <= 0) {
+                setTimeout(setupProgressBar, 200); // Duration not ready, retry
+                return;
+            }
+
+            currentQuestions.forEach(q => {
+                const left = (q.time / duration) * 100;
+                const marker = document.createElement('div');
+                marker.className = 'question-marker';
+                marker.style.left = `${left}%`;
+                
+                const timestamp = document.createElement('span');
+                timestamp.className = 'timeline-timestamp';
+                timestamp.textContent = formatTime(q.time);
+                timestamp.style.left = `${left}%`;
+                
+                marker.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    player.seekTo(q.time, true);
+                    player.playVideo();
+                });
+                
+                progressWrapper.appendChild(marker);
+                progressWrapper.appendChild(timestamp); // Append timestamp after marker
+            });
+
+            if (!progressWrapper.dataset.listenerAdded) {
+                progressWrapper.addEventListener('click', (e) => {
+                    const rect = progressWrapper.getBoundingClientRect();
+                    const seekTime = ((e.clientX - rect.left) / rect.width) * duration;
+                    player.seekTo(seekTime, true);
+                    player.playVideo();
+                });
+                progressWrapper.dataset.listenerAdded = 'true';
+            }
+        }
+
+        // Displays the question modal.
+        function showQuestion(q) {
+            document.getElementById('question-text').textContent = q.question;
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = ''; // Clear previous options
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.textContent = opt;
+                btn.addEventListener('click', () => checkAnswer(q, i));
+                optsContainer.appendChild(btn);
+            });
+            document.getElementById('feedback-container').classList.add('hidden');
+            document.getElementById('continue-button').classList.add('hidden');
+            document.getElementById('question-modal').classList.add('active');
+        }
+
+        // Checks the selected answer and provides feedback.
+        function checkAnswer(q, selectedIndex) {
+            const feedback = document.getElementById('feedback-container');
+            const feedbackText = document.getElementById('feedback-text');
+            const explanationText = document.getElementById('explanation-text');
+            const buttons = document.getElementById('options-container').querySelectorAll('button');
+            
+            buttons.forEach(b => b.disabled = true);
+
+            const isCorrect = selectedIndex === q.correctAnswer;
+            feedback.className = isCorrect ? 'feedback-container correct' : 'feedback-container incorrect';
+            feedbackText.textContent = isCorrect ? "Chính xác! Rất tốt!" : "Chưa đúng. Cùng xem lại nhé!";
+            explanationText.textContent = q.explanation;
+            
+            buttons.forEach((btn, i) => {
+                if (i === q.correctAnswer) {
+                    btn.style.borderColor = 'var(--green-color)';
+                    btn.style.borderWidth = '2px';
+                }
+                if (i === selectedIndex && !isCorrect) {
+                    btn.style.borderColor = 'var(--red-color)';
+                    btn.style.borderWidth = '2px';
+                }
+            });
+
+            feedback.classList.remove('hidden');
+            document.getElementById('continue-button').classList.remove('hidden');
+        }
+        
+        // Helper function to format seconds into MM:SS format.
+        function formatTime(timeInSeconds) {
+            const minutes = Math.floor(timeInSeconds / 60);
+            const seconds = String(timeInSeconds % 60).padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        }
+
+        // Set up listener for the continue button.
+        document.getElementById('continue-button').addEventListener('click', () => {
+            document.getElementById('question-modal').classList.remove('active');
+            // Reset button styles for the next question
+            document.getElementById('options-container').querySelectorAll('button').forEach(btn => {
+                btn.style.borderColor = '';
+                btn.style.borderWidth = '';
+            });
+            if(player && typeof player.playVideo === 'function') {
+                player.playVideo();
+            }
+        });
+    </script>
+</body>
+</html>
