@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ tạo Video Bài Giảng Tương Tác (HTML5)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        :root {
+            --primary-color: #4f46e5; /* Indigo */
+            --primary-hover: #4338ca;
+            --green-color: #16a34a;
+            --green-hover: #15803d;
+            --blue-color: #2563eb;
+            --blue-hover: #1d4ed8;
+            --red-color: #dc2626;
+            --red-hover: #b91c1c;
+            --gray-color: #6b7280;
+            --gray-hover: #4b5563;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --bg-light: #f3f4f6;
+            --bg-white: #ffffff;
+            --border-color: #d1d5db;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        /* Creator & Embed Form Styles */
+        .main-container {
+            max-width: 56rem; /* 896px */
+            margin: 2.5rem auto;
+            padding: 1.5rem;
+            background-color: var(--bg-white);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        .main-container h1, .main-container h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+        }
+        .main-container h1 { font-size: 1.875rem; font-weight: 700; }
+        .main-container h2 { font-size: 1.5rem; font-weight: 700; }
+
+        .form-section { margin-bottom: 1.5rem; }
+        .form-section h2 { font-size: 1.25rem; text-align: left; margin-bottom: 1rem; color: var(--text-dark); }
+        .form-section label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+        
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box; /* Important for padding and width */
+        }
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Button Styles */
+        .btn {
+            width: 100%;
+            font-weight: 700;
+            padding: 0.8rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 1rem;
+        }
+        .btn:hover { transform: scale(1.02); }
+        .btn-add { background-color: var(--green-color); }
+        .btn-add:hover { background-color: var(--green-hover); }
+        .btn-create { background-color: var(--primary-color); padding: 1rem; }
+        .btn-create:hover { background-color: var(--primary-hover); }
+        .btn-copy { background-color: var(--green-color); flex: 1; }
+        .btn-copy:hover { background-color: var(--green-hover); }
+        .btn-preview { background-color: var(--blue-color); flex: 1; }
+        .btn-preview:hover { background-color: var(--blue-hover); }
+        .btn-new { background-color: var(--gray-color); flex: 1; }
+        .btn-new:hover { background-color: var(--gray-hover); }
+
+        /* Question Block Styles */
+        .question-block {
+            padding: 1.5rem;
+            background-color: #f9fafb; /* Lighter gray */
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .question-header h3 { font-size: 1.125rem; font-weight: 600; color: #111827; margin: 0; }
+        .btn-delete {
+            background-color: var(--red-color);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-delete:hover { background-color: var(--red-hover); }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--bg-white);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 0.5rem;
+        }
+        .option-item input[type="radio"] { flex-shrink: 0; }
+        .option-item input[type="text"] { flex-grow: 1; }
+        
+        #output-container .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        @media (min-width: 640px) {
+            #output-container .button-group { flex-direction: row; }
+        }
+
+        /* --- Player and Modal Styles --- */
+        #player-container, #question-modal, #progress-container { display: none; }
+        
+        #player-container.active, #question-modal.active, #progress-container.active { display: block; }
+        #question-modal.active { display: flex; }
+
+
+        #player-container { position: fixed; inset: 0; z-index: 10; }
+        #player-container iframe { width: 100%; height: 100%; }
+        
+        #question-modal {
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.75);
+            align-items: center; justify-content: center; padding: 1rem;
+            z-index: 50; opacity: 0; visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #question-modal.active { opacity: 1; visibility: visible; }
+        
+        #modal-content {
+            background-color: white; border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            width: 100%; max-width: 48rem; padding: 2rem;
+            transform: scale(0.95); opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        #question-modal.active #modal-content { transform: scale(1); opacity: 1; }
+
+        #options-container { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        @media (min-width: 768px) { #options-container { grid-template-columns: 1fr 1fr; } }
+        #options-container button {
+            width: 100%; text-align: left; padding: 1rem; border-radius: 0.5rem;
+            border: 1px solid var(--border-color); cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #options-container button:hover { background-color: #f9fafb; border-color: var(--primary-color); }
+        #options-container button:disabled { cursor: default; }
+
+        #feedback-container { margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; text-align: center; }
+        #feedback-container.correct { background-color: #dcfce7; color: #166534; }
+        #feedback-container.incorrect { background-color: #fee2e2; color: #991b1b; }
+
+        #continue-button { float: right; margin-top: 2rem; background-color: var(--primary-color); }
+
+        #progress-container {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            padding: 0.75rem; z-index: 20; opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #progress-container:hover, #progress-container.visible { opacity: 1; }
+        #progress-wrapper { position: relative; height: 0.375rem; background-color: rgba(255, 255, 255, 0.2); border-radius: 9999px; cursor: pointer; }
+        #progress-bar { position: absolute; top: 0; left: 0; height: 100%; background-color: #ef4444; border-radius: 9999px; width: 0%; }
+        .question-marker { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background-color: white; border-radius: 50%; cursor: pointer; transition: transform 0.2s; z-index: 25; }
+        .question-marker:hover { transform: translate(-50%, -50%) scale(1.5); }
+        .timeline-timestamp { position: absolute; bottom: 15px; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 2px 6px; border-radius: 5px; font-size: 11px; font-weight: 500; white-space: nowrap; pointer-events: none; z-index: 24; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Application Creator Form -->
+    <div id="creator-form" class="main-container">
+        <h1>Tạo Video Bài Giảng Tương Tác</h1>
+        <div class="form-section">
+            <label for="youtube-url">Đường dẫn Video YouTube:</label>
+            <input type="text" id="youtube-url" placeholder="Ví dụ: https://www.youtube.com/watch?v=_6P-JTO0xDM">
+        </div>
+        <div class="form-section">
+            <h2>Bộ câu hỏi:</h2>
+            <div id="questions-container"></div>
+        </div>
+        <button type="button" onclick="addQuestionField()" class="btn btn-add">Thêm câu hỏi</button>
+        <button type="button" onclick="createInteractiveVideo()" class="btn btn-create">Tạo Video Tương Tác</button>
+    </div>
+    
+    <!-- HTML5 Code Output Container -->
+    <div id="output-container" class="main-container hidden">
+        <h2>Mã HTML5 cho Video Tương Tác</h2>
+        <p style="text-align: center; color: var(--text-light); margin-bottom: 1.5rem;">Sao chép mã này và lưu thành một tệp .html để có video tương tác độc lập.</p>
+        <textarea id="output-code-textarea" rows="8" readonly></textarea>
+        <div class="button-group">
+            <button onclick="copyOutputCode()" class="btn btn-copy">Sao chép mã</button>
+            <button onclick="previewVideo()" class="btn btn-preview">Xem trước Video</button>
+            <button onclick="window.location.reload()" class="btn btn-new">Tạo Video Mới</button>
+        </div>
+    </div>
+
+    <!-- Interactive Video Player (for previewing within the tool) -->
+    <div id="player-container"><div id="player"></div></div>
+    <div id="progress-container"><div id="progress-wrapper"><div id="progress-bar"></div></div></div>
+
+    <!-- Question Modal (for previewing within the tool) -->
+    <div id="question-modal">
+        <div id="modal-content">
+            <h2 id="question-text"></h2>
+            <div id="options-container"></div>
+            <div id="feedback-container" class="hidden">
+                <p id="feedback-text" style="font-weight: 600;"></p>
+                <p id="explanation-text" style="margin-top: 0.5rem; font-size: 0.875rem;"></p>
+            </div>
+            <button id="continue-button" class="btn hidden">Tiếp tục video</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State variables ---
+        let player;
+        let timeChecker;
+        let currentQuestions = [];
+        let currentVideoId = '';
+        let isTimelineSetup = false;
+        let isPlayerMode = false;
+
+        // --- 1. Creator-Mode Logic ---
+        window.onload = function() {
+            // This tool no longer needs to check for player mode on initial load.
+            // It always starts in creator mode.
+            showCreatorForm();
+        };
+
+        function showCreatorForm() {
+            document.getElementById('creator-form').style.display = 'block';
+            if (document.getElementById('questions-container').children.length === 0) {
+                 addQuestionField({ time: 180, question: 'Theo định nghĩa trong bài giảng, đâu là sự khác biệt chính giữa "dữ liệu" và "thông tin"?', options: ["Dữ liệu là kết quả đã xử lý, còn thông tin là các sự kiện thô.", "Dữ liệu là các sự kiện, số liệu thô chưa qua xử lý, còn thông tin là kết quả của việc xử lý dữ liệu theo một cách có ý nghĩa.", "Dữ liệu chỉ bao gồm số, còn thông tin bao gồm cả văn bản và hình ảnh.", "Không có sự khác biệt, chúng là hai thuật ngữ có thể thay thế cho nhau."], correctAnswer: 1, explanation: "Tại [00:02:25], video giải thích rõ ràng rằng dữ liệu là các sự kiện, số liệu hay ký hiệu thô chưa qua xử lý, trong khi thông tin là kết quả của việc xử lý dữ liệu theo một cách có ý nghĩa để giúp chúng ta đưa ra quyết định." });
+                 addQuestionField({ time: 270, question: "Quá trình xử lý dữ liệu của máy tính được mô tả qua bốn giai đoạn cơ bản nào?", options: ["Thu thập, Phân tích, Hiển thị, Lưu trữ.", "Tiếp nhận dữ liệu, Xử lý dữ liệu, Xuất thông tin, Lưu trữ.", "Đầu vào, Xử lý, Đầu ra, Sao lưu.", "Nhập liệu, Tính toán, Trình bày, Ghi nhớ."], correctAnswer: 1, explanation: "Tại [00:03:52], bài giảng nêu rõ bốn giai đoạn cơ bản của chu trình xử lý dữ liệu của máy tính: Tiếp nhận dữ liệu, Xử lý dữ liệu, Xuất thông tin và Lưu trữ." });
+                 addQuestionField({ time: 420, question: 'Thành phần phần cứng nào được ví như "bộ não của máy tính" và có nhiệm vụ thực hiện mọi phép tính cũng như điều khiển hoạt động?', options: ["RAM", "Ổ cứng SSD", "Bo mạch chủ", "Bộ xử lý trung tâm (CPU)"], correctAnswer: 3, explanation: "Tại [00:06:49], video nhấn mạnh rằng Bộ xử lý trung tâm (CPU) là thành phần cốt lõi và quan trọng nhất, được ví như bộ não của máy tính." });
+                 addQuestionField({ time: 540, question: "Đâu là ưu điểm nổi bật của ổ cứng thể rắn (SSD) so với ổ cứng cơ (HDD)?", options: ["Dung lượng lưu trữ lớn hơn nhiều.", "Giá thành rẻ hơn đáng kể.", "Tốc độ đọc/ghi dữ liệu nhanh hơn rất nhiều.", "Sử dụng đĩa từ quay để lưu trữ dữ liệu."], correctAnswer: 2, explanation: "Từ [00:09:07] đến [00:09:22], bài giảng so sánh HDD và SSD, nêu bật ưu điểm của SSD là tốc độ đọc/ghi nhanh hơn rất nhiều do sử dụng chip nhớ và không có bộ phận chuyển động." });
+                 addQuestionField({ time: 780, question: "Đâu không phải là một chức năng chính của hệ điều hành?", options: ["Quản lý tài nguyên phần cứng.", "Quản lý tệp tin và thư mục.", "Tự động cập nhật phần mềm ứng dụng từ các nguồn không xác định.", "Cung cấp giao diện người dùng."], correctAnswer: 2, explanation: "Từ [00:13:50] đến [00:14:22], bài giảng liệt kê bốn chức năng chính của hệ điều hành. Việc tự động cập nhật phần mềm từ các nguồn không xác định không phải là chức năng của hệ điều hành mà là một rủi ro bảo mật." });
+            }
+        }
+
+        const questionsContainer = document.getElementById('questions-container');
+        let questionCounter = 0;
+
+        function addQuestionField(initialData = {}) {
+            questionCounter++;
+            const questionDiv = document.createElement('div');
+            questionDiv.id = `question-block-${questionCounter}`;
+            questionDiv.className = 'question-block';
+            questionDiv.innerHTML = `
+                <div class="question-header">
+                    <h3>Câu hỏi #${questionCounter}</h3>
+                    <button type="button" onclick="removeQuestionField(${questionCounter})" class="btn-delete">Xóa</button>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="q${questionCounter}-time">Thời gian hiển thị (giây):</label>
+                    <input type="number" id="q${questionCounter}-time" value="${initialData.time || ''}" min="0" required>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="q${questionCounter}-text">Nội dung câu hỏi:</label>
+                    <textarea id="q${questionCounter}-text" rows="2" required>${initialData.question || ''}</textarea>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Các lựa chọn (Đánh dấu ô tròn cho đáp án đúng):</label>
+                    ${[0, 1, 2, 3].map(i => `
+                        <div class="option-item">
+                            <input type="radio" id="q${questionCounter}-correct-${i}" name="q${questionCounter}-correct" value="${i}" ${initialData.correctAnswer === i ? 'checked' : ''}>
+                            <input type="text" id="q${questionCounter}-option-${i}" value="${initialData.options ? initialData.options[i] : ''}" placeholder="Lựa chọn ${i + 1}" required>
+                        </div>
+                    `).join('')}
+                </div>
+                <div>
+                    <label for="q${questionCounter}-explanation">Giải thích đáp án:</label>
+                    <textarea id="q${questionCounter}-explanation" rows="2" required>${initialData.explanation || ''}</textarea>
+                </div>`;
+            questionsContainer.appendChild(questionDiv);
+        }
+
+        function removeQuestionField(id) { document.getElementById(`question-block-${id}`)?.remove(); }
+
+        function getYouTubeVideoId(url) {
+            const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+            const match = url.match(regExp);
+            return (match && match[1]) ? match[1] : null;
+        }
+
+        function collectQuestions() {
+            const collected = [];
+            for (let i = 1; i <= questionCounter; i++) {
+                if (!document.getElementById(`question-block-${i}`)) continue;
+                const time = document.getElementById(`q${i}-time`).value;
+                const question = document.getElementById(`q${i}-text`).value;
+                const explanation = document.getElementById(`q${i}-explanation`).value;
+                const options = Array.from({length: 4}, (_, j) => document.getElementById(`q${i}-option-${j}`).value);
+                const correctRadio = document.querySelector(`input[name="q${i}-correct"]:checked`);
+                
+                if (!time || !question || !explanation || options.some(opt => !opt) || !correctRadio) {
+                    alert(`Vui lòng điền đầy đủ thông tin cho Câu hỏi #${i}.`);
+                    return null;
+                }
+                collected.push({ time: parseInt(time, 10), question, options, correctAnswer: parseInt(correctRadio.value), explanation, shown: false });
+            }
+            return collected;
+        }
+
+        function createInteractiveVideo() {
+            const videoId = getYouTubeVideoId(document.getElementById('youtube-url').value);
+            if (!videoId) { alert('Vui lòng nhập đường dẫn YouTube hợp lệ.'); return; }
+            const questionsData = collectQuestions();
+            if (!questionsData) return;
+
+            // Generate the full HTML content for the standalone player
+            const fullHtml = generatePlayerHTML(videoId, questionsData);
+
+            document.getElementById('creator-form').style.display = 'none';
+            document.getElementById('output-container').classList.remove('hidden');
+            document.getElementById('output-code-textarea').value = fullHtml;
+        }
+
+        // --- 2. HTML Generation and Output Logic ---
+        function generatePlayerHTML(videoId, questionsData) {
+            // NOTE: Using template literals requires escaping backticks if they appear in the content.
+            const styles = document.querySelector('style').innerHTML.replace(/`/g, '\\`');
+            
+            // Convert player logic functions to strings to embed them
+            // We pass the functions themselves, not their string representations, to keep the code cleaner.
+            const htmlContent = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Tương Tác</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        ${styles}
+        /* Ensure creator-specific styles are not included or are overridden */
+        .main-container { display: none; }
+        body { background-color: #000; } /* Black background for player mode */
+    </style>
+</head>
+<body>
+    <!-- Player HTML Structure -->
+    <div id="player-container" class="active"><div id="player"></div></div>
+    <div id="progress-container" class="active"><div id="progress-wrapper"><div id="progress-bar"></div></div></div>
+    <div id="question-modal">
+        <div id="modal-content">
+            <h2 id="question-text"></h2>
+            <div id="options-container"></div>
+            <div id="feedback-container" class="hidden">
+                <p id="feedback-text" style="font-weight: 600;"></p>
+                <p id="explanation-text" style="margin-top: 0.5rem; font-size: 0.875rem;"></p>
+            </div>
+            <button id="continue-button" class="btn hidden">Tiếp tục video</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Player-only Logic ---
+        let player;
+        let timeChecker;
+        const currentVideoId = '${videoId}';
+        const currentQuestions = ${JSON.stringify(questionsData, null, 2)};
+        let isTimelineSetup = false;
+
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%', width: '100%', videoId: currentVideoId,
+                playerVars: { 'playsinline': 1, 'rel': 0, 'modestbranding': 1, 'controls': 0, 'iv_load_policy': 3, 'autoplay': 1 },
+                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+            });
+        }
+
+        ${onPlayerReady.toString()}
+        ${onPlayerStateChange.toString()}
+        ${checkVideoTime.toString()}
+        ${setupProgressBar.toString()}
+        ${showQuestion.toString()}
+        ${checkAnswer.toString()}
+
+        // Manually attach event listener for the continue button in the generated code
+        window.onload = function() {
+             document.getElementById('continue-button').onclick = () => {
+                document.getElementById('question-modal').classList.remove('active');
+                if(player) player.playVideo();
+            };
+        };
+    <\/script>
+</body>
+</html>`;
+            return htmlContent;
+        }
+
+        function copyOutputCode() {
+            const textarea = document.getElementById('output-code-textarea');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Đã sao chép mã HTML!');
+        }
+
+        function previewVideo() {
+            const htmlContent = document.getElementById('output-code-textarea').value;
+            if (htmlContent) {
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+            }
+        }
+        
+        // --- 3. Player Logic (for in-tool preview) ---
+        // NOTE: This logic is now duplicated. The functions below are for the preview
+        // and also serve as templates for the generatePlayerHTML function.
+
+        // Load YouTube API for the tool itself for preview functionality
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() { /* This will be called but we only create player on demand for preview */ }
+        
+        function onPlayerReady(event) { event.target.playVideo(); }
+
+        function onPlayerStateChange(event) {
+            const progressContainer = document.getElementById('progress-container');
+            if (event.data === YT.PlayerState.PLAYING) {
+                if (!isTimelineSetup) {
+                    setTimeout(setupProgressBar, 100);
+                    isTimelineSetup = true;
+                }
+                progressContainer.classList.add('visible');
+                clearInterval(timeChecker);
+                timeChecker = setInterval(checkVideoTime, 250);
+            } else {
+                progressContainer.classList.add('visible');
+                clearInterval(timeChecker);
+            }
+        }
+        
+        function checkVideoTime() {
+            if (!player?.getCurrentTime) return;
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            if (duration > 0) document.getElementById('progress-bar').style.width = (currentTime / duration) * 100 + '%';
+            
+            // Find the next question that hasn't been shown
+            const nextQuestion = currentQuestions.find(q => !q.shown);
+            if (nextQuestion && currentTime >= nextQuestion.time) {
+                player.pauseVideo();
+                nextQuestion.shown = true;
+                showQuestion(nextQuestion);
+            }
+        }
+
+        function setupProgressBar() {
+            const progressWrapper = document.getElementById('progress-wrapper');
+            progressWrapper.querySelectorAll('.question-marker, .timeline-timestamp').forEach(el => el.remove());
+            const duration = player.getDuration();
+            if (duration <= 0) { setTimeout(setupProgressBar, 200); return; }
+
+            currentQuestions.forEach(q => {
+                const left = (q.time / duration) * 100;
+                const m = document.createElement('div'); m.className = 'question-marker'; m.style.left = `${left}%`;
+                const t = document.createElement('span'); t.className = 'timeline-timestamp';
+                const mins = Math.floor(q.time / 60); const secs = String(q.time % 60).padStart(2, '0');
+                t.textContent = `${mins}:${secs}`; t.style.left = `${left}%`;
+                m.onclick = (e) => { e.stopPropagation(); player.seekTo(q.time); player.playVideo(); };
+                progressWrapper.appendChild(m); progressWrapper.appendChild(t);
+            });
+
+            if (!progressWrapper.dataset.listenerAdded) {
+                progressWrapper.onclick = (e) => {
+                    const rect = progressWrapper.getBoundingClientRect();
+                    player.seekTo((e.clientX - rect.left) / rect.width * duration);
+                    player.playVideo();
+                };
+                progressWrapper.dataset.listenerAdded = 'true';
+            }
+        }
+
+        function showQuestion(q) {
+            document.getElementById('question-text').textContent = q.question;
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.textContent = opt;
+                btn.onclick = () => checkAnswer(q, i);
+                optsContainer.appendChild(btn);
+            });
+            document.getElementById('feedback-container').classList.add('hidden');
+            document.getElementById('continue-button').classList.add('hidden');
+            document.getElementById('question-modal').classList.add('active');
+        }
+
+        function checkAnswer(q, selectedIndex) {
+            const feedback = document.getElementById('feedback-container');
+            const feedbackText = document.getElementById('feedback-text');
+            const explanationText = document.getElementById('explanation-text');
+            const buttons = document.getElementById('options-container').querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+            
+            const isCorrect = selectedIndex === q.correctAnswer;
+            feedback.className = isCorrect ? 'correct' : 'incorrect';
+            feedbackText.textContent = isCorrect ? "Chính xác! Rất tốt!" : "Chưa đúng. Cùng xem lại nhé!";
+            explanationText.textContent = q.explanation;
+
+            buttons.forEach((btn, i) => {
+                if (i === q.correctAnswer) btn.style.borderColor = 'var(--green-color)';
+                if (i === selectedIndex && !isCorrect) btn.style.borderColor = 'var(--red-color)';
+            });
+
+            feedback.classList.remove('hidden');
+            document.getElementById('continue-button').classList.remove('hidden');
+        }
+        
+        document.getElementById('continue-button').onclick = () => {
+            document.getElementById('question-modal').classList.remove('active');
+            player.playVideo();
+        };
+
+    </script>
+</body>
+</html>
+
